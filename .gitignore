@@ -1,0 +1,7 @@
+.pyd
+cy_array.c
+.idea
+__pycache__
+build
+cython_debug
+venv
