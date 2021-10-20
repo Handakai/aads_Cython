@@ -63,16 +63,18 @@ cdef class DArray:
     cdef int iteration
     cdef array_descriptor* dsc
 
-    def __cinit__(self, str type_code, size_t initial):
+    def __cinit__(self, str type_code, object initial, size_t length):
             self.used = 0
             self.iteration = 0
-            if initial > 0:
-                self.size = initial
+            if length > 0:
+                self.size = length
             else:
                 self.size = 4 # default length
             self.dsc = &descriptors[type_code_to_type(type_code)]
 
-            self.data = <char *> PyMem_Malloc(initial * self.dsc.item_size)
+            self.data = <char *> PyMem_Malloc(length * self.dsc.item_size)
+            for item in initial:
+                self.append(item)
             if not self.data:
                 raise MemoryError()
 
@@ -84,7 +86,7 @@ cdef class DArray:
             return self.dsc.getitem(self, index)
         raise IndexError()
 
-    def __setitem__(self, size_t index, object value):
+    def __setitem__(self, int index, object value):
         if 0 <= index < self.used:
             self.dsc.setitem(self, index, value)
         else:
@@ -97,6 +99,12 @@ cdef class DArray:
             )
             if not self.data:
                 raise MemoryError()
+    def optimize(self):
+        if self.used and self.size / self.used >= 4:
+            self.data = <char *> PyMem_Realloc(
+                self.data, self.size * self.dsc.item_size / 2
+            )
+            self.size /= 2
 
     def append(self, object value):
         self.expand()
@@ -106,7 +114,7 @@ cdef class DArray:
     def insert(self, size_t index, object value):
         cdef int i, idx = <int> index
         if index >= self.used:
-            raise MemoryError()
+            self.append(value)
         else:
             self.expand()
             for i in range(self.used - 1, idx - 1, -1):
@@ -114,7 +122,7 @@ cdef class DArray:
                     self, i + 1, self.dsc.getitem(self, i)
                 )
             self.dsc.setitem(self, index, value)
-            self.size += 1
+            self.used += 1
 
     def remove(self, object item):
         cdef int i, j
@@ -125,12 +133,15 @@ cdef class DArray:
                         self, j - 1, self.dsc.getitem(self, j)
                     )
                 self.used -= 1
+                self.optimize()
                 break
 
     def pop(self, size_t index):
         if 0 <= index <= self.used:
             value = self.dsc.getitem(self, index)
             self.remove(value)
+            if value:
+                self.optimize()
             return value
         raise IndexError()
 

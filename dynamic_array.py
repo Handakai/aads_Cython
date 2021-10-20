@@ -1,17 +1,27 @@
+"""DynamicArray wrapper"""
 from array import array
 
 from cy_array import DArray
 
 
 class Array:
+    """DynamicArray wrapper class"""
     def __init__(self, type_code: str, initial: object) -> object:
+        """
+        Array class constructor
+        :param type_code: array type
+        :param initial: array initializer
+        """
         self.type_code = type_code
-        self.dar = DArray(type_code, len(initial))
+        self.dar = DArray(type_code, initial, len(initial))
 
-        for item in initial:
-            self.dar.append(item)
 
     def __getitem__(self, index: int) -> object:
+        """
+        Getting element from array
+        :param index: element index
+        :return: value
+        """
         if index < 0:
             if -index <= self.dar.used:
                 index = self.dar.used + index
@@ -20,17 +30,34 @@ class Array:
         return self.dar[index]
 
     def __setitem__(self, index: int, value: object):
+        """
+        Adding element in array
+        :param index: element index
+        :param value: element value
+        :return:
+        """
         if index < 0:
-            if index <= self.dar.used:
+            if -index <= self.dar.used:
                 index = self.dar.used + index
             else:
                 raise IndexError()
         self.dar[index] = value
 
     def append(self, value: object):
+        """
+        Appending element
+        :param value: element
+        :return:
+        """
         self.dar.append(value)
 
     def insert(self, index: int, value: object):
+        """
+        Inserting element by index
+        :param index: index
+        :param value: element
+        :return:
+        """
         if index < 0:
             if -index <= self.dar.used:
                 index = self.dar.used + index
@@ -39,9 +66,19 @@ class Array:
         self.dar.insert(index, value)
 
     def remove(self, value: object):
+        """
+        Removing first occurrence of element in array
+        :param value: element
+        :return:
+        """
         self.dar.remove(value)
 
     def pop(self, index: int) -> object:
+        """
+        Removing element from array by index and returning element
+        :param index: element index
+        :return: element value
+        """
         if index < 0:
             if -index <= self.dar.used:
                 index = self.dar.used + index
