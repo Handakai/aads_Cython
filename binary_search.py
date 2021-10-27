@@ -36,6 +36,7 @@ def search(array: object, item: object) -> int:
     index = in_search(array, item)
 
     if index and index > 0:
-        if array[index - 1] == array[index]:
+
+        while array[index - 1] == array[index]:
             index -= 1
     return index

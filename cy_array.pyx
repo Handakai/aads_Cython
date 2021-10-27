@@ -57,13 +57,14 @@ cdef int type_code_to_type(str type_code):
     return -1
 
 cdef class DArray:
-    cdef readonly size_t used
+    cdef size_t used
     cdef size_t size
     cdef char *data
     cdef int iteration
     cdef array_descriptor* dsc
 
-    def __cinit__(self, str type_code, object initial, size_t length):
+    def __cinit__(self, str type_code, object initial):
+            length = sum(1 for x in initial)
             self.used = 0
             self.iteration = 0
             if length > 0:
@@ -72,11 +73,12 @@ cdef class DArray:
                 self.size = 4 # default length
             self.dsc = &descriptors[type_code_to_type(type_code)]
 
-            self.data = <char *> PyMem_Malloc(length * self.dsc.item_size)
-            for item in initial:
-                self.append(item)
+            self.data = <char *> PyMem_Malloc(self.size * self.dsc.item_size)
             if not self.data:
                 raise MemoryError()
+            for item in initial:
+                self.append(item)
+
 
     def __dealloc__(self):
         PyMem_Free(self.data)
@@ -97,19 +99,25 @@ cdef class DArray:
             self.data = <char *> PyMem_Realloc(
                 self.data, 2 * self.size *  self.dsc.item_size
             )
+            self.size *= 2
             if not self.data:
                 raise MemoryError()
-    def optimize(self):
-        if self.used and self.size / self.used >= 4:
-            self.data = <char *> PyMem_Realloc(
-                self.data, self.size * self.dsc.item_size / 2
-            )
-            self.size /= 2
 
     def append(self, object value):
         self.expand()
         self.dsc.setitem(self, self.used, value)
         self.used += 1
+
+    def optimize(self):
+        if self.used and self.size / self.used >= 4:
+            self.data = <char *> PyMem_Realloc(
+                self.data, self.size * self.dsc.item_size // 2
+            )
+            self.size /= 2
+            if not self.data:
+                raise MemoryError()
+
+
 
     def insert(self, size_t index, object value):
         cdef int i, idx = <int> index

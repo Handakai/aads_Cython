@@ -13,7 +13,7 @@ class Array:
         :param initial: array initializer
         """
         self.type_code = type_code
-        self.dar = DArray(type_code, initial, len(initial))
+        self.dar = DArray(type_code, initial)
 
 
     def __getitem__(self, index: int) -> object:
@@ -103,11 +103,7 @@ class Array:
         return False
 
     def __str__(self):
-        return_string = ''
-        for x in self.dar:
-            return_string.join(str(x))
-            return_string.join(', ')
-        return return_string
+        return f'[{", ".join([str(e) for e in self.dar])}]'
 
     def __repr__(self):
         return self.__str__()
